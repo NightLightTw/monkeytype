@@ -96,6 +96,30 @@ until docker exec monkeytype-mongodb mongosh --quiet --eval 'quit(db.runCommand(
 done
 echo "✔ MongoDB + Redis 可連線"
 
+# ── 2.5 同步 Anki 卡片成打字內容（非致命：失敗只警告，不擋啟動） ────
+ANKI_SYNC_SCRIPT="$REPO_DIR/../youtube-anki-mining/sync_monkeytype.py"
+ANKI_SYNC_PYTHON="$REPO_DIR/../youtube-anki-mining/.venv/bin/python"
+if [ -f "$ANKI_SYNC_SCRIPT" ] && [ -x "$ANKI_SYNC_PYTHON" ]; then
+  anki_ready() { curl -s -m 2 -X POST -d '{"action":"version","version":6}' http://127.0.0.1:8765 2>/dev/null | grep -q '"error": *null'; }
+  if ! anki_ready; then
+    echo "▶ Anki 未開啟，嘗試啟動（同步打字內容用）..."
+    open -a Anki 2>/dev/null || true
+    waited=0
+    until anki_ready; do
+      sleep 2
+      waited=$((waited + 2))
+      [ "$waited" -lt 30 ] && continue
+      break
+    done
+  fi
+  if anki_ready; then
+    echo "▶ 同步 Anki 卡片 → monkeytype..."
+    "$ANKI_SYNC_PYTHON" "$ANKI_SYNC_SCRIPT" || echo "⚠ Anki 同步失敗，沿用上次的內容" >&2
+  else
+    echo "⚠ AnkiConnect 30 秒內未就緒，略過同步（沿用上次的內容）" >&2
+  fi
+fi
+
 # ── 3. 啟動 Firebase Auth Emulator（本地離線登入） ──────────────────
 EMU_DATA="$REPO_DIR/.firebase-emulator-data"
 FIREBASE_PROJECT="$(sed -n 's/.*projectId: "\(.*\)".*/\1/p' "$REPO_DIR/frontend/src/ts/constants/firebase-config.ts")"
