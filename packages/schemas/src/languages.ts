@@ -5,6 +5,7 @@ import { customEnumErrorHandler } from "./util";
 export const LanguageSchema = z.enum(
   [
     "english",
+    "english_anki",
     "english_1k",
     "english_5k",
     "english_10k",
