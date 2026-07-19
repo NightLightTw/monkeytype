@@ -16,6 +16,7 @@ import {
   signInWithPopup as firebaseSignInWithPopup,
   createUserWithEmailAndPassword as firebaseCreateUserWithEmailAndPassword,
   getIdToken as firebaseGetIdToken,
+  connectAuthEmulator,
   UserCredential,
   AuthProvider,
   onAuthStateChanged,
@@ -62,6 +63,14 @@ export async function init(callback: ReadyCallback): Promise<void> {
     readyCallback = callback;
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     Auth = getAuth(app);
+
+    // local-only auth: route all authentication through the Firebase Auth
+    // Emulator (started by start.sh) so login works fully offline
+    if (isDevEnvironment()) {
+      connectAuthEmulator(Auth, "http://localhost:9099", {
+        disableWarnings: true,
+      });
+    }
 
     const rememberMe =
       window.localStorage.getItem("firebasePersistence") === "LOCAL";
