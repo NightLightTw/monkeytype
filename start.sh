@@ -138,6 +138,12 @@ until curl -s http://127.0.0.1:9099/ >/dev/null 2>&1; do
 done
 echo "✔ Auth Emulator 就緒（帳號管理介面：http://localhost:4000）"
 
+# ── 3.5 預先編譯 workspace 套件（消除後端啟動時載入到重建到一半的
+#        schemas dist 的競態；turbo 有快取，無變更時只需一兩秒） ────
+echo "▶ 預先編譯 workspace 套件..."
+(cd "$REPO_DIR" && pnpm build-pkg >/dev/null 2>&1) || fail "workspace 套件編譯失敗，請手動執行 pnpm build-pkg 檢查錯誤"
+echo "✔ 套件就緒"
+
 # ── 4. 啟動前端 (3000) + 後端 (5005) ───────────────────────────────
 echo "▶ 啟動前端 http://localhost:3000 與後端 http://localhost:5005 ..."
 echo "  （初次啟動需編譯，請稍等；Ctrl+C 結束前後端與 Emulator，資料庫容器會留在背景）"
